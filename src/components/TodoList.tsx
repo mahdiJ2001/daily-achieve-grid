@@ -1,69 +1,91 @@
-import { useState } from "react";
-import { Task } from "./TodoApp";
-import { TaskItem } from "./TaskItem";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Target } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Plus, Loader2 } from "lucide-react";
+import { TaskItem } from "./TaskItem";
+import { getTodosForDate, addTodo, type Todo } from "@/lib/todos";
+import { toast } from "@/hooks/use-toast";
 
-interface TodoListProps {
-  tasks: Task[];
-  onAddTask: (text: string) => void;
-  onToggleTask: (taskId: string) => void;
-  onUpdateTask: (taskId: string, newText: string) => void;
-  onDeleteTask: (taskId: string) => void;
-}
-
-export const TodoList = ({ tasks, onAddTask, onToggleTask, onUpdateTask, onDeleteTask }: TodoListProps) => {
+export const TodoList = () => {
   const [newTaskText, setNewTaskText] = useState("");
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0];
 
-  const todaysTasks = tasks.filter(task => {
-    const taskDate = new Date(task.createdAt);
-    taskDate.setHours(0, 0, 0, 0);
-    return taskDate.getTime() === today.getTime();
-  });
+  // Load todos for today
+  const loadTodos = async () => {
+    try {
+      setLoading(true);
+      const todaysTodos = await getTodosForDate(today);
+      setTodos(todaysTodos);
+    } catch (error) {
+      toast({
+        title: "Error loading tasks",
+        description: "Failed to load today's tasks.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const completedToday = todaysTasks.filter(task => task.completed).length;
-  const totalToday = todaysTasks.length;
-  const progressPercentage = totalToday > 0 ? (completedToday / totalToday) * 100 : 0;
+  useEffect(() => {
+    loadTodos();
+  }, [today]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Calculate progress for today's tasks
+  const completedTasks = todos.filter(todo => todo.is_completed).length;
+  const totalTasks = todos.length;
+  const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newTaskText.trim()) {
-      onAddTask(newTaskText.trim());
+    if (!newTaskText.trim()) return;
+
+    try {
+      setAdding(true);
+      const newTodo = await addTodo(newTaskText.trim(), today);
+      setTodos(prev => [...prev, newTodo]);
       setNewTaskText("");
+      toast({
+        title: "Task added",
+        description: "Your task has been added successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error adding task", 
+        description: "Failed to add the task. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setAdding(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Progress Card */}
-      <Card className="bg-gradient-surface border-primary/20">
+      {/* Today's Progress */}
+      <Card className="mb-6 bg-gradient-surface border-border shadow-glow">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="text-primary" size={20} />
-            Today's Progress
-          </CardTitle>
+          <CardTitle className="text-card-foreground">Today's Progress</CardTitle>
+          <CardDescription>
+            {loading ? "Loading..." : `${completedTasks} of ${totalTasks} tasks completed`}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {completedToday} of {totalToday} tasks completed
-              </span>
-              <span className="text-sm font-medium">
-                {Math.round(progressPercentage)}%
-              </span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-2">
-              <div
-                className="bg-gradient-primary h-2 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
+          <div className="space-y-2">
+            <Progress 
+              value={progressPercentage} 
+              className="h-3 bg-surface" 
+            />
+            <p className="text-right text-sm font-medium text-accent">
+              {progressPercentage}%
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -76,10 +98,21 @@ export const TodoList = ({ tasks, onAddTask, onToggleTask, onUpdateTask, onDelet
               placeholder="Add a new task..."
               value={newTaskText}
               onChange={(e) => setNewTaskText(e.target.value)}
+              disabled={adding}
               className="flex-1 bg-surface border-border/50 focus:border-primary"
             />
-            <Button type="submit" className="bg-gradient-primary hover:shadow-glow transition-smooth">
-              <Plus size={16} />
+            <Button 
+              type="submit" 
+              size="sm"
+              disabled={adding}
+              className="bg-gradient-primary text-primary-foreground hover:opacity-90 transition-smooth"
+            >
+              {adding ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
+              Add Task
             </Button>
           </form>
         </CardContent>
@@ -88,25 +121,28 @@ export const TodoList = ({ tasks, onAddTask, onToggleTask, onUpdateTask, onDelet
       {/* Tasks List */}
       <Card className="bg-card border-border/50">
         <CardHeader>
-          <CardTitle>Today's Tasks</CardTitle>
+          <CardTitle className="text-card-foreground">Today's Tasks</CardTitle>
         </CardHeader>
         <CardContent>
-          {todaysTasks.length === 0 ? (
+          {loading ? (
             <div className="text-center py-8 text-muted-foreground">
-              <Target size={48} className="mx-auto mb-4 opacity-50" />
-              <p>No tasks for today. Add one above to get started!</p>
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+              <p>Loading tasks...</p>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {todaysTasks.map(task => (
+          ) : todos.length > 0 ? (
+            <div className="space-y-3">
+              {todos.map(todo => (
                 <TaskItem
-                  key={task.id}
-                  task={task}
-                  onToggle={onToggleTask}
-                  onUpdate={onUpdateTask}
-                  onDelete={onDeleteTask}
+                  key={todo.id}
+                  task={todo}
+                  onUpdate={loadTodos}
                 />
               ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No tasks for today yet.</p>
+              <p className="text-sm">Add your first task above!</p>
             </div>
           )}
         </CardContent>

@@ -2,69 +2,63 @@ import { useState } from "react";
 import { TodoList } from "./TodoList";
 import { CalendarView } from "./CalendarView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, CheckSquare } from "lucide-react";
-
-export interface Task {
-  id: string;
-  text: string;
-  completed: boolean;
-  completedAt?: Date;
-  createdAt: Date;
-}
+import { Button } from "@/components/ui/button";
+import { Calendar, CheckSquare, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { signOut } from "@/lib/auth";
+import { toast } from "@/hooks/use-toast";
 
 export const TodoApp = () => {
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    const savedTasks = localStorage.getItem('todoapp-tasks');
-    return savedTasks ? JSON.parse(savedTasks) : [];
-  });
+  const { user } = useAuth();
 
-  const updateTasks = (newTasks: Task[]) => {
-    setTasks(newTasks);
-    localStorage.setItem('todoapp-tasks', JSON.stringify(newTasks));
-  };
-
-  const addTask = (text: string) => {
-    const newTask: Task = {
-      id: crypto.randomUUID(),
-      text,
-      completed: false,
-      createdAt: new Date(),
-    };
-    updateTasks([...tasks, newTask]);
-  };
-
-  const toggleTask = (taskId: string) => {
-    const updatedTasks = tasks.map(task =>
-      task.id === taskId 
-        ? { ...task, completed: !task.completed, completedAt: task.completed ? undefined : new Date() }
-        : task
-    );
-    updateTasks(updatedTasks);
-  };
-
-  const updateTaskText = (taskId: string, newText: string) => {
-    const updatedTasks = tasks.map(task =>
-      task.id === taskId ? { ...task, text: newText } : task
-    );
-    updateTasks(updatedTasks);
-  };
-
-  const deleteTask = (taskId: string) => {
-    const updatedTasks = tasks.filter(task => task.id !== taskId);
-    updateTasks(updatedTasks);
+  const handleSignOut = async () => {
+    try {
+      const { error } = await signOut();
+      if (error) {
+        toast({
+          title: "Sign out failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="mb-2 text-4xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-            Todo Progress Tracker
-          </h1>
-          <p className="text-muted-foreground">
-            Build daily habits and track your long-term progress
-          </p>
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-center flex-1">
+              <h1 className="mb-2 text-4xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+                Todo Progress Tracker
+              </h1>
+              <p className="text-muted-foreground">
+                Build daily habits and track your long-term progress
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">
+                {user?.email}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSignOut}
+                className="border-border hover:bg-surface"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Main App */}
@@ -81,21 +75,11 @@ export const TodoApp = () => {
           </TabsList>
 
           <TabsContent value="today" className="mt-6">
-            <TodoList
-              tasks={tasks}
-              onAddTask={addTask}
-              onToggleTask={toggleTask}
-              onUpdateTask={updateTaskText}
-              onDeleteTask={deleteTask}
-            />
+            <TodoList />
           </TabsContent>
 
           <TabsContent value="calendar" className="mt-6">
-            <CalendarView
-              tasks={tasks}
-              onUpdateTask={updateTaskText}
-              onDeleteTask={deleteTask}
-            />
+            <CalendarView />
           </TabsContent>
         </Tabs>
       </div>

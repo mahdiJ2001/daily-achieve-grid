@@ -1,118 +1,189 @@
 import { useState } from "react";
-import { Task } from "./TodoApp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit2, Trash2, Check, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Edit, Trash2, Check, X, Loader2 } from "lucide-react";
+import { toggleTodoComplete, updateTodoTitle, deleteTodo, type Todo } from "@/lib/todos";
+import { toast } from "@/hooks/use-toast";
 
 interface TaskItemProps {
-  task: Task;
-  onToggle: (taskId: string) => void;
-  onUpdate: (taskId: string, newText: string) => void;
-  onDelete: (taskId: string) => void;
+  task: Todo;
+  onUpdate: () => void; // Callback to refresh the todo list
 }
 
-export const TaskItem = ({ task, onToggle, onUpdate, onDelete }: TaskItemProps) => {
+export const TaskItem = ({ task, onUpdate }: TaskItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(task.text);
+  const [editText, setEditText] = useState(task.title);
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
-    if (editText.trim()) {
-      onUpdate(task.id, editText.trim());
+  const handleToggle = async () => {
+    try {
+      setLoading(true);
+      await toggleTodoComplete(task.id);
+      onUpdate();
+      toast({
+        title: task.is_completed ? "Task marked as incomplete" : "Task completed!",
+        description: task.is_completed 
+          ? "Task has been marked as incomplete." 
+          : "Great job on completing this task!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error updating task",
+        description: "Failed to update task. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!editText.trim()) {
       setIsEditing(false);
+      return;
+    }
+
+    if (editText.trim() === task.title) {
+      setIsEditing(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await updateTodoTitle(task.id, editText.trim());
+      onUpdate();
+      setIsEditing(false);
+      toast({
+        title: "Task updated",
+        description: "Your task has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error updating task",
+        description: "Failed to update task. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      setLoading(true);
+      await deleteTodo(task.id);
+      onUpdate();
+      toast({
+        title: "Task deleted",
+        description: "Your task has been deleted successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error deleting task",
+        description: "Failed to delete task. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    setEditText(task.text);
+    setEditText(task.title);
     setIsEditing(false);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSave();
-    } else if (e.key === "Escape") {
-      handleCancel();
-    }
-  };
+  if (isEditing) {
+    return (
+      <div className="flex items-center space-x-3 p-3 bg-surface border border-border rounded-lg">
+        <Input
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSave();
+            if (e.key === 'Escape') handleCancel();
+          }}
+          disabled={loading}
+          className="flex-1 bg-input border-border"
+          autoFocus
+        />
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSave}
+            disabled={loading}
+            className="h-8 w-8 p-0 hover:bg-success/20 hover:text-success transition-smooth"
+          >
+            {loading ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Check className="h-3 w-3" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCancel}
+            disabled={loading}
+            className="h-8 w-8 p-0 hover:bg-destructive/20 hover:text-destructive transition-smooth"
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-3 p-3 rounded-lg bg-surface border border-border/30 transition-smooth hover:border-border/60",
-        task.completed && "bg-success/5 border-success/20"
-      )}
-    >
-      <Checkbox
-        checked={task.completed}
-        onCheckedChange={() => onToggle(task.id)}
-        className="data-[state=checked]:bg-gradient-primary data-[state=checked]:border-primary"
-      />
-
-      {isEditing ? (
-        <div className="flex-1 flex items-center gap-2">
-          <Input
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
-            onKeyDown={handleKeyPress}
-            className="flex-1 bg-surface border-border/50"
-            autoFocus
-          />
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleSave}
-            className="p-2 hover:bg-success/20"
-          >
-            <Check size={14} className="text-success" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleCancel}
-            className="p-2 hover:bg-destructive/20"
-          >
-            <X size={14} className="text-destructive" />
-          </Button>
+    <div className="flex items-center space-x-3 p-3 bg-surface border border-border rounded-lg hover:border-primary/30 transition-smooth">
+      <div className="flex items-center space-x-3">
+        <Checkbox 
+          checked={task.is_completed}
+          onCheckedChange={handleToggle}
+          disabled={loading}
+          className="data-[state=checked]:bg-success data-[state=checked]:border-success transition-smooth"
+        />
+        
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm transition-smooth ${
+            task.is_completed 
+              ? "line-through text-muted-foreground" 
+              : "text-card-foreground"
+          }`}>
+            {task.title}
+          </p>
         </div>
-      ) : (
-        <>
-          <span
-            className={cn(
-              "flex-1 transition-smooth",
-              task.completed && "line-through text-muted-foreground"
+
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setEditText(task.title);
+              setIsEditing(true);
+            }}
+            disabled={loading}
+            className="h-8 w-8 p-0 hover:bg-surface transition-smooth"
+          >
+            {loading ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Edit className="h-3 w-3" />
             )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDelete}
+            disabled={loading}
+            className="h-8 w-8 p-0 hover:bg-destructive/20 hover:text-destructive transition-smooth"
           >
-            {task.text}
-          </span>
-          
-          <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setIsEditing(true)}
-              className="p-2 hover:bg-accent/20"
-            >
-              <Edit2 size={14} className="text-accent" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onDelete(task.id)}
-              className="p-2 hover:bg-destructive/20"
-            >
-              <Trash2 size={14} className="text-destructive" />
-            </Button>
-          </div>
-        </>
-      )}
-
-      {task.completed && (
-        <div className="text-xs text-success px-2 py-1 bg-success/10 rounded-full">
-          ✓ Done
+            <Trash2 className="h-3 w-3" />
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 };
