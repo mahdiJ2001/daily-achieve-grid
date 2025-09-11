@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
+const sb = supabase as any;
+
 export interface Todo {
   id: string;
   title: string;
@@ -19,7 +21,7 @@ export interface TaskProgress {
 
 // Get todos for a specific date
 export const getTodosForDate = async (date: string): Promise<Todo[]> => {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('todos')
     .select('*')
     .eq('task_date', date)
@@ -35,7 +37,7 @@ export const addTodo = async (title: string, taskDate: string): Promise<Todo> =>
   
   if (!user) throw new Error('User not authenticated');
   
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('todos')
     .insert({
       title,
@@ -53,15 +55,16 @@ export const addTodo = async (title: string, taskDate: string): Promise<Todo> =>
 // Toggle todo completion
 export const toggleTodoComplete = async (id: string): Promise<Todo> => {
   // First get the current todo to toggle its completion
-  const { data: currentTodo, error: fetchError } = await supabase
+  const { data: currentTodo, error: fetchError } = await sb
     .from('todos')
     .select('is_completed')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   
   if (fetchError) throw fetchError;
-  
-  const { data, error } = await supabase
+  if (!currentTodo) throw new Error('Todo not found');
+
+  const { data, error } = await sb
     .from('todos')
     .update({ is_completed: !currentTodo.is_completed })
     .eq('id', id)
@@ -74,7 +77,7 @@ export const toggleTodoComplete = async (id: string): Promise<Todo> => {
 
 // Update todo title
 export const updateTodoTitle = async (id: string, title: string): Promise<Todo> => {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('todos')
     .update({ title })
     .eq('id', id)
@@ -87,7 +90,7 @@ export const updateTodoTitle = async (id: string, title: string): Promise<Todo> 
 
 // Delete todo
 export const deleteTodo = async (id: string): Promise<void> => {
-  const { error } = await supabase
+  const { error } = await sb
     .from('todos')
     .delete()
     .eq('id', id);
@@ -97,7 +100,7 @@ export const deleteTodo = async (id: string): Promise<void> => {
 
 // Get calendar progress data
 export const getCalendarProgress = async (): Promise<TaskProgress[]> => {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('task_progress_by_date')
     .select('*')
     .order('task_date', { ascending: false });

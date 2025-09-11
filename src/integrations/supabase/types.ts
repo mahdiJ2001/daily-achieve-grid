@@ -14,10 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      todos: {
+        Row: {
+          created_at: string
+          id: string
+          is_completed: boolean
+          task_date: string
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          task_date: string
+          title: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          task_date?: string
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      task_progress_by_date: {
+        Row: {
+          completed_tasks: number | null
+          pct_completed: number | null
+          task_date: string | null
+          total_tasks: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
