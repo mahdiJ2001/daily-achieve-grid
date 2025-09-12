@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { TodoList } from "./TodoList";
 import { CalendarView } from "./CalendarView";
+import { InstallButton } from "./InstallButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Calendar, CheckSquare, LogOut } from "lucide-react";
@@ -49,6 +50,7 @@ export const TodoApp = () => {
                 <p className="text-sm font-medium text-foreground">{user?.email}</p>
                 <p className="text-xs text-muted-foreground">Signed in</p>
               </div>
+              <InstallButton />
               <Button
                 variant="outline"
                 size="sm"
