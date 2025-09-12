@@ -140,61 +140,64 @@ export const CalendarView = () => {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-gradient-surface border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-card-foreground">Total Completed</CardTitle>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="shadow-sm border-border/60">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Completed</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-accent">
+            <div className="text-2xl font-bold text-foreground">
               {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : totalCompletedTasks}
             </div>
-            <p className="text-xs text-muted-foreground">tasks finished</p>
+            <p className="text-xs text-muted-foreground mt-1">tasks finished</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-surface border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-card-foreground">Current Streak</CardTitle>
+        <Card className="shadow-sm border-border/60">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Current Streak</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">
+            <div className="text-2xl font-bold text-foreground">
               {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : currentStreak}
             </div>
-            <p className="text-xs text-muted-foreground">days in a row</p>
+            <p className="text-xs text-muted-foreground mt-1">days in a row</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-surface border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-card-foreground">This Month</CardTitle>
+        <Card className="shadow-sm border-border/60">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">
+            <div className="text-2xl font-bold text-foreground">
               {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : thisMonthTasks}
             </div>
-            <p className="text-xs text-muted-foreground">tasks completed</p>
+            <p className="text-xs text-muted-foreground mt-1">tasks completed</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Calendar Grid */}
-      <Card className="bg-card border-border/50">
+      <Card className="shadow-sm border-border/60">
         <CardHeader>
-          <CardTitle className="text-card-foreground">
+          <CardTitle className="text-lg font-semibold text-foreground">
             {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Progress
           </CardTitle>
+          <CardDescription className="text-sm">
+            Click on any day to view tasks for that date
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-7 gap-2 mb-4">
+          <div className="grid grid-cols-7 gap-1 mb-4">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-center text-sm font-medium text-muted-foreground p-2">
+              <div key={day} className="text-center text-xs font-medium text-muted-foreground p-2">
                 {day}
               </div>
             ))}
           </div>
           
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-1">
             {calendarDays.map((day, index) => (
               <div key={index} className="aspect-square">
                 {day ? (
@@ -203,20 +206,22 @@ export const CalendarView = () => {
                     onClick={() => setSelectedDate(day)}
                     className={`
                       aspect-square flex items-center justify-center text-sm cursor-pointer
-                      transition-smooth hover:bg-surface rounded-md
+                      transition-colors duration-200 rounded-md border border-transparent
+                      hover:border-border hover:bg-accent/50
                       ${selectedDate.toDateString() === day.toDateString() 
-                        ? 'bg-accent text-accent-foreground shadow-glow' 
+                        ? 'bg-primary text-primary-foreground border-primary' 
                         : ''
                       }
                       ${(() => {
                         const progress = getProgressForDate(day);
                         if (!progress || progress.completed_tasks === 0) {
-                          return 'text-card-foreground';
+                          return 'text-muted-foreground';
                         }
                         const pct = progress.pct_completed;
-                        if (pct === 100) return 'bg-success text-success-foreground font-medium';
-                        if (pct >= 50) return 'bg-success/60 text-success-foreground font-medium';
-                        return 'bg-success/20 text-success font-medium';
+                        if (selectedDate.toDateString() === day.toDateString()) return '';
+                        if (pct === 100) return 'bg-green-50 text-green-700 border-green-200';
+                        if (pct >= 50) return 'bg-blue-50 text-blue-700 border-blue-200';
+                        return 'bg-orange-50 text-orange-700 border-orange-200';
                       })()}
                     `}
                   >
@@ -232,23 +237,23 @@ export const CalendarView = () => {
       </Card>
 
       {/* Selected Date Tasks */}
-      <Card className="bg-card border-border">
+      <Card className="shadow-sm border-border/60">
         <CardHeader>
-          <CardTitle className="text-card-foreground">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Tasks for {formatDate(selectedDate)}
           </CardTitle>
-          <CardDescription>
-            {todosLoading ? "Loading..." : `${selectedDateTodos.length} task(s) on this day`}
+          <CardDescription className="text-sm">
+            {todosLoading ? "Loading..." : `${selectedDateTodos.length} task${selectedDateTodos.length !== 1 ? 's' : ''} on this day`}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {todosLoading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-              <p>Loading tasks...</p>
+            <div className="flex items-center justify-center py-12 text-muted-foreground">
+              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+              <span className="text-sm">Loading tasks...</span>
             </div>
           ) : selectedDateTodos.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {selectedDateTodos.map(todo => (
                 <TaskItem
                   key={todo.id}
@@ -261,8 +266,8 @@ export const CalendarView = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No tasks on this day.</p>
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No tasks on this day</p>
             </div>
           )}
         </CardContent>

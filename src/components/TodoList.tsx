@@ -70,42 +70,44 @@ export const TodoList = () => {
   return (
     <div className="space-y-6">
       {/* Today's Progress */}
-      <Card className="mb-6 bg-gradient-surface border-border shadow-glow">
-        <CardHeader>
-          <CardTitle className="text-card-foreground">Today's Progress</CardTitle>
-          <CardDescription>
+      <Card className="shadow-sm border-border/60">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-semibold text-foreground">Today's Progress</CardTitle>
+          <CardDescription className="text-sm">
             {loading ? "Loading..." : `${completedTasks} of ${totalTasks} tasks completed`}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Progress 
               value={progressPercentage} 
-              className="h-3 bg-surface" 
+              className="h-2" 
             />
-            <p className="text-right text-sm font-medium text-accent">
-              {progressPercentage}%
-            </p>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Progress</span>
+              <span className="font-medium text-foreground">
+                {progressPercentage}%
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Add Task Form */}
-      <Card className="bg-card-elevated border-border/50">
+      <Card className="shadow-sm border-border/60">
         <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="flex gap-2">
+          <form onSubmit={handleSubmit} className="flex gap-3">
             <Input
               placeholder="Add a new task..."
               value={newTaskText}
               onChange={(e) => setNewTaskText(e.target.value)}
               disabled={adding}
-              className="flex-1 bg-surface border-border/50 focus:border-primary"
+              className="flex-1"
             />
             <Button 
               type="submit" 
-              size="sm"
               disabled={adding}
-              className="bg-gradient-primary text-primary-foreground hover:opacity-90 transition-smooth"
+              className="px-4"
             >
               {adding ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -119,18 +121,21 @@ export const TodoList = () => {
       </Card>
 
       {/* Tasks List */}
-      <Card className="bg-card border-border/50">
+      <Card className="shadow-sm border-border/60">
         <CardHeader>
-          <CardTitle className="text-card-foreground">Today's Tasks</CardTitle>
+          <CardTitle className="text-lg font-semibold text-foreground">Today's Tasks</CardTitle>
+          <CardDescription className="text-sm">
+            {loading ? "Loading tasks..." : `${todos.length} task${todos.length !== 1 ? 's' : ''} for today`}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-              <p>Loading tasks...</p>
+            <div className="flex items-center justify-center py-12 text-muted-foreground">
+              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+              <span className="text-sm">Loading tasks...</span>
             </div>
           ) : todos.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {todos.map(todo => (
                 <TaskItem
                   key={todo.id}
@@ -140,9 +145,9 @@ export const TodoList = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No tasks for today yet.</p>
-              <p className="text-sm">Add your first task above!</p>
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-1">No tasks for today yet</p>
+              <p className="text-sm text-muted-foreground">Add your first task above to get started</p>
             </div>
           )}
         </CardContent>

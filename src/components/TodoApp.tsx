@@ -31,28 +31,29 @@ export const TodoApp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="mx-auto max-w-6xl">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-center flex-1">
-              <h1 className="mb-2 text-4xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b border-border bg-card/50">
+        <div className="max-w-6xl mx-auto px-6 py-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                 Todo Progress Tracker
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground mt-1">
                 Build daily habits and track your long-term progress
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                {user?.email}
-              </span>
+              <div className="text-right">
+                <p className="text-sm font-medium text-foreground">{user?.email}</p>
+                <p className="text-xs text-muted-foreground">Signed in</p>
+              </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleSignOut}
-                className="border-border hover:bg-surface"
+                className="text-sm"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
@@ -60,25 +61,27 @@ export const TodoApp = () => {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Main App */}
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
         <Tabs defaultValue="today" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-surface">
-            <TabsTrigger value="today" className="flex items-center gap-2">
-              <CheckSquare size={16} />
+          <TabsList className="grid w-full grid-cols-2 mb-8 max-w-md mx-auto">
+            <TabsTrigger value="today" className="text-sm font-medium">
+              <CheckSquare className="h-4 w-4 mr-2" />
               Today's Tasks
             </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex items-center gap-2">
-              <Calendar size={16} />
+            <TabsTrigger value="calendar" className="text-sm font-medium">
+              <Calendar className="h-4 w-4 mr-2" />
               Progress Calendar
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="today" className="mt-6">
+          <TabsContent value="today" className="space-y-6">
             <TodoList />
           </TabsContent>
 
-          <TabsContent value="calendar" className="mt-6">
+          <TabsContent value="calendar" className="space-y-6">
             <CalendarView />
           </TabsContent>
         </Tabs>
