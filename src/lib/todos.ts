@@ -98,13 +98,45 @@ export const deleteTodo = async (id: string): Promise<void> => {
   if (error) throw error;
 };
 
-// Get calendar progress data
+// Get calendar progress data for current user
 export const getCalendarProgress = async (): Promise<TaskProgress[]> => {
-  const { data, error } = await sb
-    .from('task_progress_by_date')
-    .select('*')
-    .order('task_date', { ascending: false });
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('User not authenticated');
+
+  // Get all todos for the current user
+  const { data: todos, error } = await sb
+    .from('todos')
+    .select('task_date, is_completed')
+    .eq('user_id', user.id);
   
   if (error) throw error;
-  return data || [];
+  
+  // Calculate progress by date
+  const progressMap = new Map<string, { total: number; completed: number }>();
+  
+  todos?.forEach(todo => {
+    const date = todo.task_date;
+    if (!progressMap.has(date)) {
+      progressMap.set(date, { total: 0, completed: 0 });
+    }
+    const progress = progressMap.get(date)!;
+    progress.total++;
+    if (todo.is_completed) {
+      progress.completed++;
+    }
+  });
+  
+  // Convert to TaskProgress array
+  const progressData: TaskProgress[] = Array.from(progressMap.entries()).map(([date, progress]) => ({
+    task_date: date,
+    total_tasks: progress.total,
+    completed_tasks: progress.completed,
+    pct_completed: progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0
+  }));
+  
+  // Sort by date descending
+  progressData.sort((a, b) => new Date(b.task_date).getTime() - new Date(a.task_date).getTime());
+  
+  return progressData;
 };
