@@ -105,37 +105,27 @@ export const CalendarView = () => {
   const calculateStreak = () => {
     let streak = 0;
     let checkDate = new Date();
-    const today = formatDateLocal(new Date());
     
-    // Go backwards day by day, but only count days up to today
+    // Go backwards day by day
     while (true) {
       const dateStr = formatDateLocal(checkDate);
       const progress = progressData.find(p => p.task_date === dateStr);
       
-      // Stop if we find a day with no completed tasks (but had tasks)
-      // or if there's no progress data for a day that should have been considered
       if (progress) {
-        if (progress.completed_tasks === 0) {
-          break; // Had tasks but none completed - streak ends
-        }
-        streak++; // Has completed tasks - continue streak
-      } else {
-        // No progress data for this date
-        // Only break the streak if this is a past or current day
-        // (we don't count future days or days without any tasks)
-        if (dateStr <= today && streak > 0) {
-          break;
-        } else if (dateStr <= today) {
-          // This is today or a past day with no tasks - no streak yet
+        if (progress.completed_tasks > 0) {
+          streak++; // Has completed tasks - continue streak
+        } else {
+          // Had tasks but none completed - streak ends
           break;
         }
-        // Future days are ignored
       }
+      // If no progress data (no tasks for this day), continue to previous day without breaking streak
       
       checkDate.setDate(checkDate.getDate() - 1);
       
       // Safety check to prevent infinite loops (don't go back more than 365 days)
-      if (streak > 365) break;
+      const daysDiff = Math.floor((new Date().getTime() - checkDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysDiff > 365) break;
     }
     
     return streak;
