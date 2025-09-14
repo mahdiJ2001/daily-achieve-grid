@@ -5,6 +5,14 @@ import { getTodosForDate, getCalendarProgress, type Todo, type TaskProgress } fr
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
+// Helper function to format date in local timezone as YYYY-MM-DD
+const formatDateLocal = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const CalendarView = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedDateTodos, setSelectedDateTodos] = useState<Todo[]>([]);
@@ -33,7 +41,7 @@ export const CalendarView = () => {
   const loadSelectedDateTodos = async (date: Date) => {
     try {
       setTodosLoading(true);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = formatDateLocal(date);
       const todos = await getTodosForDate(dateStr);
       setSelectedDateTodos(todos);
     } catch (error) {
@@ -89,19 +97,18 @@ export const CalendarView = () => {
 
   // Get progress for a specific date
   const getProgressForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDateLocal(date);
     return progressData.find(p => p.task_date === dateStr);
   };
 
   // Calculate current streak
   const calculateStreak = () => {
-    const today = new Date().toISOString().split('T')[0];
     let streak = 0;
     let checkDate = new Date();
     
     // Go backwards day by day
     while (true) {
-      const dateStr = checkDate.toISOString().split('T')[0];
+      const dateStr = formatDateLocal(checkDate);
       const progress = progressData.find(p => p.task_date === dateStr);
       
       if (!progress || progress.completed_tasks === 0) {

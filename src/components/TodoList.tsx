@@ -14,8 +14,15 @@ export const TodoList = () => {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
 
-  // Get today's date in YYYY-MM-DD format
-  const today = new Date().toISOString().split('T')[0];
+  // Get today's date in YYYY-MM-DD format (local timezone)
+  const formatDateLocal = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  const today = formatDateLocal(new Date());
 
   // Load todos for today
   const loadTodos = async () => {
